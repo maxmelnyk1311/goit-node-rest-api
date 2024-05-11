@@ -81,7 +81,7 @@ export const updateContact = async (req, res) => {
       return res.status(400).json({ message: error.message });
     }
 
-    const updatedContact = await changeContact(id, infoToUpdate);
+    const updatedContact = await contactsService.changeContact(id, infoToUpdate);
 
     if (!updatedContact) {
       return res.status(404).json({ message: "Not found" });
