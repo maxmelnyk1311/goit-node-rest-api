@@ -1,5 +1,6 @@
 // import contactsService from "../services/contactsServices.js";
-import { createContactSchema, updateContactSchema } from "../schemas/contactsSchemas.js";
+import mongoose from "mongoose";
+import { createContactSchema, updateContactSchema, updateFavoriteInContact } from "../schemas/contactsSchemas.js";
 import Contact from "../models/contactModel.js";
 
 export const getAllContacts = async (req, res, next) => {
@@ -16,7 +17,7 @@ export const getAllContacts = async (req, res, next) => {
 export const getOneContact = async (req, res) => {
   try {
     const { id } = req.params;
-    if (id.length !== 24) {
+    if (!mongoose.isValidObjectId(id)) {
       return res.status(404).json({ message: "Contact not found" });
     }
     
@@ -36,7 +37,7 @@ export const getOneContact = async (req, res) => {
 export const deleteContact = async (req, res) => {
   try {
     const { id } = req.params;
-    if (id.length !== 24) {
+    if (!mongoose.isValidObjectId(id)) {
       return res.status(404).json({ message: "Contact not found" });
     }
 
@@ -81,10 +82,13 @@ export const createContact = async (req, res) => {
 export const updateContact = async (req, res) => {
   try {
     const { id } = req.params;
-    if (id.length !== 24) {
+    if (!mongoose.isValidObjectId(id)) {
       return res.status(404).json({ message: "Contact not found" });
     }
     const infoToUpdate = req.body;
+    if (Object.keys(infoToUpdate).length === 0) {
+      return res.status(400).json({ message: "Body must have at least one field" });
+    }
 
     const { error } = updateContactSchema.validate(infoToUpdate, {
       convert: false,
@@ -109,10 +113,17 @@ export const updateContact = async (req, res) => {
 export const updateStatusContact = async (req, res) => {
   try {
     const { id } = req.params;
-    if (id.length !== 24) {
+    if (!mongoose.isValidObjectId(id)) {
       return res.status(404).json({ message: "Contact not found" });
     }
     const favorite = req.body;
+
+    const { error } = updateFavoriteInContact.validate(favorite, {
+      convert: false,
+    });
+    if (error) {
+      return res.status(400).json({ message: error.message });
+    }
 
     const updatedContact = await Contact.findByIdAndUpdate(id, favorite, { new: true });
     if (!updatedContact) {
