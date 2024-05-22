@@ -5,16 +5,19 @@ import { createUserSchema, logInUserSchema } from "../schemas/userSchemas.js";
 
 export const userRegister = async (req, res, next) => {
   try {
-    const { email, password, subscription } = req.body;
+    const { email, password } = req.body;
+    if (email === undefined) {
+      return res.status(400).json({message: "Write email!"})
+    }
     const emailTrimAndLower = email.trim().toLowerCase();
 
     const { error } = createUserSchema.validate(
-      { email: emailTrimAndLower, password, subscription },
+      { email: emailTrimAndLower, password },
       {
         convert: false,
       }
     );
-    console.log("error: ", error);
+
     if (typeof error !== "undefined") {
       return res
         .status(400)
@@ -31,9 +34,13 @@ export const userRegister = async (req, res, next) => {
     const userInfo = await User.create({
       email: emailTrimAndLower,
       password: passwordHash,
-      subscription,
     });
-    res.status(201).json(userInfo);
+    res.status(201).json({
+      user: {
+        email: userInfo.email,
+        subscription: userInfo.subscription,
+      },
+    });
   } catch (error) {
     console.error("Error: ", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -43,6 +50,9 @@ export const userRegister = async (req, res, next) => {
 export const userLogIn = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    if (email === undefined) {
+      return res.status(400).json({message: "Write email!"})
+    }
     const emailTrimAndLower = email.trim().toLowerCase();
 
     const { error } = logInUserSchema.validate(
@@ -96,4 +106,11 @@ export const userLogOut = async (req, res, next) => {
     console.error("Error: ", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
+};
+
+export const getCurrentUser = async (req, res, next) => {
+  res.status(200).json({user: {
+    email: req.user.email,
+    subscription: req.user.subscription
+  }})
 }

@@ -30,9 +30,7 @@ function authMiddleware(req, res, next) {
         return res.status(401).send({ message: "Not authorized" });
       }
 
-      req.user = {
-        id: user._id
-      };
+      req.user = user;
 
       next();
     } catch (error) {
