@@ -6,24 +6,25 @@ import { createUserSchema, logInUserSchema } from "../schemas/userSchemas.js";
 export const userRegister = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    if (email === undefined) {
-      return res.status(400).json({message: "Write email!"})
-    }
-    const emailTrimAndLower = email.trim().toLowerCase();
 
+    if (email === undefined) {
+      return res.status(400).json({ message: "Write email!" });
+    }
+    
     const { error } = createUserSchema.validate(
-      { email: emailTrimAndLower, password },
+      { email, password },
       {
         convert: false,
       }
     );
-
     if (typeof error !== "undefined") {
       return res
         .status(400)
-        .json({ message: "Помилка від Joi або іншої бібліотеки валідації" });
-    }
+        .json({ message: error.message });
+    }    
 
+
+    const emailTrimAndLower = email.trim().toLowerCase();
     const user = await User.findOne({ email: emailTrimAndLower });
     if (user !== null) {
       return res.status(409).send({ message: "Email in use" });
@@ -50,22 +51,23 @@ export const userRegister = async (req, res, next) => {
 export const userLogIn = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+
     if (email === undefined) {
-      return res.status(400).json({message: "Write email!"})
+      return res.status(400).json({ message: "Write email!" });
     }
-    const emailTrimAndLower = email.trim().toLowerCase();
 
     const { error } = logInUserSchema.validate(
-      { email: emailTrimAndLower, password },
+      { email, password },
       {
         convert: false,
       }
     );
+
     if (typeof error !== "undefined") {
-      return res
-        .status(400)
-        .json({ message: "Помилка від Joi або іншої бібліотеки валідації" });
+      return res.status(400).json({ message: error.message });
     }
+
+    const emailTrimAndLower = email.trim().toLowerCase();
 
     const user = await User.findOne({ email: emailTrimAndLower });
     if (user === null) {
@@ -109,8 +111,10 @@ export const userLogOut = async (req, res, next) => {
 };
 
 export const getCurrentUser = async (req, res, next) => {
-  res.status(200).json({user: {
-    email: req.user.email,
-    subscription: req.user.subscription
-  }})
-}
+  res.status(200).json({
+    user: {
+      email: req.user.email,
+      subscription: req.user.subscription,
+    },
+  });
+};
