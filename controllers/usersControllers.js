@@ -10,7 +10,7 @@ export const userRegister = async (req, res, next) => {
     if (email === undefined) {
       return res.status(400).json({ message: "Write email!" });
     }
-    
+
     const { error } = createUserSchema.validate(
       { email, password },
       {
@@ -18,11 +18,8 @@ export const userRegister = async (req, res, next) => {
       }
     );
     if (typeof error !== "undefined") {
-      return res
-        .status(400)
-        .json({ message: error.message });
-    }    
-
+      return res.status(400).json({ message: error.message });
+    }
 
     const emailTrimAndLower = email.trim().toLowerCase();
     const user = await User.findOne({ email: emailTrimAndLower });
@@ -112,9 +109,7 @@ export const userLogOut = async (req, res, next) => {
 
 export const getCurrentUser = async (req, res, next) => {
   res.status(200).json({
-    user: {
-      email: req.user.email,
-      subscription: req.user.subscription,
-    },
+    email: req.user.email,
+    subscription: req.user.subscription,
   });
 };
