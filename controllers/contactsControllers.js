@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-// import contactsService from "../services/contactsServices.js";
 import mongoose from "mongoose";
 import { createContactSchema, updateContactSchema, updateFavoriteInContact } from "../schemas/contactsSchemas.js";
 import Contact from "../models/contactModel.js";
@@ -151,16 +149,3 @@ export const updateStatusContact = async (req, res) => {
     
   }
 }
-=======
-import contactsService from "../services/contactsServices.js";
-
-export const getAllContacts = (req, res) => {};
-
-export const getOneContact = (req, res) => {};
-
-export const deleteContact = (req, res) => {};
-
-export const createContact = (req, res) => {};
-
-export const updateContact = (req, res) => {};
->>>>>>> Stashed changes
