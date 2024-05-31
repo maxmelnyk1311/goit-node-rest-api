@@ -1,5 +1,5 @@
 import express from "express";
-import { userRegister, userLogIn, userLogOut, getCurrentUser, uploadAvatar } from "../controllers/usersControllers.js";
+import { userRegister, userLogIn, userLogOut, getCurrentUser, uploadAvatar, userVerify, resendVerification } from "../controllers/usersControllers.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import uploadMiddleware from "../middleware/upload.js";
 
@@ -17,5 +17,9 @@ usersRouter.patch(
     uploadMiddleware.single("avatar"),
     uploadAvatar,
 );
+usersRouter.get("/verify/:verificationToken", userVerify);
+usersRouter.post("/verify", resendVerification);
+
+
 
 export default usersRouter;
