@@ -1,11 +1,13 @@
 import * as fs from "node:fs/promises";
 import path from "node:path";
 import bcrypt from "bcrypt";
+import crypto from "node:crypto";
 import gravatar from "gravatar";
 import Jimp from "jimp";
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
-import { createUserSchema, logInUserSchema } from "../schemas/userSchemas.js";
+import { createUserSchema, logInUserSchema, verifyUserSchema } from "../schemas/userSchemas.js";
+import mail from "../services/sendMail.js";
 
 export const userRegister = async (req, res, next) => {
   try {
@@ -32,12 +34,23 @@ export const userRegister = async (req, res, next) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const verificationToken = crypto.randomUUID();
 
     const userInfo = await User.create({
       email: emailTrimAndLower,
       password: passwordHash,
       avatarURL: gravatar.url(emailTrimAndLower),
+      verificationToken,
     });
+
+    mail.sendMail({
+      to: emailTrimAndLower,
+      from: "m.melnyk.js@gmail.com",
+      subject: "Welcome to ContactBook!",
+      html: `To confirm your email please click on the <a href="http://localhost:3000/users/verify/${verificationToken}">link</a>`,
+      text: `To confirm your email please open the link http://localhost:3000/users/verify/${verificationToken}`,
+    });
+
     res.status(201).json({
       user: {
         email: userInfo.email,
@@ -79,6 +92,10 @@ export const userLogIn = async (req, res, next) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch === false) {
       return res.status(401).send({ message: "Email or password is wrong" });
+    }
+
+    if (user.verify === false) {
+      return res.status(401).send({ message: "Please verify your email" });
     }
 
     const token = jwt.sign(
@@ -139,6 +156,75 @@ export const uploadAvatar = async (req, res, next) => {
       return res.status(404).send({ message: "User not found" });
     }
     res.json({ avatarURL: user.avatarURL });
+  } catch (error) {
+    console.error("Error: ", error);
+    next(error);
+  }
+};
+
+export const userVerify = async (req, res, next) => {
+  try {
+    const { verificationToken } = req.params;
+
+    const user = await User.findOneAndUpdate(
+      { verificationToken: verificationToken },
+      { verify: true, verificationToken: null },
+      { new: true }
+    );
+
+    if (user === null) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    res.status(200).send({ message: "Verification successful" });
+  } catch (error) {
+    console.error("Error: ", error);
+    next(error);
+  }
+};
+
+export const resendVerification = async (req, res, next) => {
+  try {
+    const email = req.body.email;
+
+    if (!email) {
+      return res.status(400).send({message: "missing required field email"})
+    }
+
+    const emailTrimAndLower = email.trim().toLowerCase();
+    const { error } = verifyUserSchema.validate(
+      { email: emailTrimAndLower },
+      {
+        convert: false,
+      }
+    );
+    if (typeof error !== "undefined") {
+      return res.status(400).json({ message: error.message });
+    }
+
+    const user = await User.findOne({ email: emailTrimAndLower });
+    if (user === null) {
+      return res.status(401).send({ message: "There is no user by this email" });
+    }
+
+    if (user.verify) {
+      return res.status(400).send({message: "Verification has already been passed"});
+    }
+
+    if(user.verificationToken) {
+      mail.sendMail({
+        to: emailTrimAndLower,
+        from: "m.melnyk.js@gmail.com",
+        subject: "Welcome to ContactBook!",
+        html: `To confirm your email please click on the <a href="http://localhost:3000/users/verify/${user.verificationToken}">link</a>`,
+        text: `To confirm your email please open the link http://localhost:3000/users/verify/${user.verificationToken}`,
+      });
+    } else {
+      return res.status(400).send({message: "User have no token"});
+    }
+
+    res.status(200).send({"message": "Verification email sent"})
+
   } catch (error) {
     console.error("Error: ", error);
     next(error);
