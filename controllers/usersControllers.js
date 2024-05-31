@@ -121,6 +121,9 @@ export const getCurrentUser = async (req, res, next) => {
 
 export const uploadAvatar = async (req, res, next) => {
   try {
+    if(!req.file) {
+      return res.status(400).send({message: "We need image to change avatar!"})
+    }
     const image = await Jimp.read(req.file.path);
     image.resize(250, 250).write(path.resolve(req.file.path));
 
@@ -131,14 +134,14 @@ export const uploadAvatar = async (req, res, next) => {
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { avatarURL: req.file.filename },
+      { avatarURL: `/avatars/${req.file.filename}` },
       { new: true }
     );
 
     if (user === null) {
       return res.status(404).send({ message: "User not found" });
     }
-    res.json({ avatarURL: user.avatarURL });
+    res.json({ avatarURL: user.avatarURL});
   } catch (error) {
     console.error("Error: ", error);
     next(error);
