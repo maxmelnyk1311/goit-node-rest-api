@@ -12,7 +12,7 @@ usersRouter.post("/login", jsonParser, userLogIn);
 usersRouter.post("/logout", authMiddleware, userLogOut);
 usersRouter.get("/current", authMiddleware, getCurrentUser);
 usersRouter.patch(
-    "/avatar",
+    "/avatars",
     authMiddleware,
     uploadMiddleware.single("avatar"),
     uploadAvatar,
